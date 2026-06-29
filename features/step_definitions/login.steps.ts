@@ -10,7 +10,7 @@ let page: Page;
 let loginPage: LoginPage;
 
 Before({ tags: '@login' }, async () => {
-  browser = await chromium.launch({ headless: process.env.CI === 'true' || process.env.CI === '1' });
+  browser = await chromium.launch({ headless: true });
   const context = await browser.newContext();
   page = await context.newPage();
   loginPage = new LoginPage(page);
