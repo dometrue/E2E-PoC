@@ -1,0 +1,38 @@
+trigger:
+  branches:
+    include:
+      - feature/e2e-poc
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '20.x'
+    displayName: 'Install Node.js'
+
+  - script: npm install
+    displayName: 'Install dependencies'
+
+  - script: npx playwright install chromium --with-deps
+    displayName: 'Install Playwright browsers'
+
+  - script: npm test
+    displayName: 'Run E2E tests'
+    env:
+      TEST_USERNAME: $(TEST_USERNAME)
+      TEST_PASSWORD: $(TEST_PASSWORD)
+      TEST_USER_SUB: $(TEST_USER_SUB)
+      BASE_URL: $(BASE_URL)
+      BASE_URL_CLOUD: $(BASE_URL_CLOUD)
+      BASE_URL_BACKOFFICE: $(BASE_URL_BACKOFFICE)
+      BACKOFFICE_USERNAME: $(BACKOFFICE_USERNAME)
+      BACKOFFICE_PASSWORD: $(BACKOFFICE_PASSWORD)
+
+  - task: PublishPipelineArtifact@1
+    inputs:
+      targetPath: 'reports'
+      artifact: 'test-reports'
+    displayName: 'Publish test reports and screenshots'
+    condition: always()
