@@ -15,9 +15,7 @@ export async function clearUserSessions(): Promise<void> {
 
   console.log('Clearing sessions via backoffice...');
 
-const browser = await chromium.launch({
-  headless: process.env.CI === 'true' || process.env.CI === '1'
-});
+  const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext();
   const page = await context.newPage();
 
