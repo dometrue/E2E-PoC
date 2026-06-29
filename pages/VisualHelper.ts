@@ -17,6 +17,11 @@ export async function compareScreenshot(
   const actualPath = path.join(actualDir, `${name}.png`);
   const diffPath = path.join(diffDir, `${name}.png`);
 
+  // Create directories if they don't exist
+  fs.mkdirSync(baselineDir, { recursive: true });
+  fs.mkdirSync(actualDir, { recursive: true });
+  fs.mkdirSync(diffDir, { recursive: true });
+
   // Take actual screenshot of the canvas element
   const element = page.locator(selector).first();
   await element.screenshot({ path: actualPath });
