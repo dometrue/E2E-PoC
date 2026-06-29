@@ -11,6 +11,7 @@ Proof of concept for end-to-end test automation using **Playwright**, **Cucumber
 | [TypeScript](https://www.typescriptlang.org/) | Type-safe test code |
 | [pixelmatch](https://github.com/mapbox/pixelmatch) | Visual regression testing |
 | XRAY | Test result reporting in Jira |
+| Azure DevOps | CI/CD pipeline |
 
 ## Project Structure
 
@@ -28,32 +29,35 @@ e2e-poc/
 │   └── VisualHelper.ts                # Screenshot comparison utility
 ├── utils/
 │   ├── SessionManager.ts              # Clears user sessions via backoffice
-│   └── jwt.ts                         # JWT token decoder
-├── reports/                           # Auto-generated (git-ignored)
+│   ├── jwt.ts                         # JWT token decoder
+│   └── xray.ts                        # XRAY result push utility
+├── reports/                           # Auto-generated (git-ignored except baselines)
 │   ├── cucumber-report.json           # Test results for XRAY
 │   ├── login-success.png              # Screenshot: successful login
 │   ├── login-error.png                # Screenshot: failed login
 │   └── screenshots/
-│       ├── baseline/                  # Reference screenshots
-│       ├── actual/                    # Screenshots from latest run
-│       └── diff/                      # Pixel difference images
+│       ├── baseline/                  # Reference screenshots (committed to Git)
+│       ├── actual/                    # Screenshots from latest run (git-ignored)
+│       └── diff/                      # Pixel difference images (git-ignored)
 ├── .env                               # Local credentials (git-ignored)
 ├── .env.example                       # Template for required variables
+├── azure-pipelines.yml                # Azure DevOps CI pipeline
 ├── cucumber.js                        # Cucumber configuration
 └── package.json                       # Dependencies and scripts
 ```
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org/) v18 or higher
+- [Node.js](https://nodejs.org/) v22 or higher
 - [Git](https://git-scm.com/)
 
 ## Setup
 
 **1. Clone the repository**
 ```bash
-git clone https://dev.azure.com/BAMDigitalServices/up2partsCloud/_git/e2e-poc
-cd e2e-poc
+git clone https://dev.azure.com/BAMDigitalServices/up2partsCloud/_git/e2e-tests
+cd e2e-tests
+git checkout feature/e2e-poc
 ```
 
 **2. Install dependencies**
@@ -89,7 +93,7 @@ XRAY_CLIENT_SECRET=    # XRAY Cloud API client secret
 
 ## Running Tests
 
-**Run all tests**
+**Run all tests locally**
 ```bash
 npm test
 ```
@@ -98,6 +102,23 @@ npm test
 ```bash
 npm run xray
 ```
+
+## CI/CD Pipeline
+
+Tests run automatically on every push to `feature/e2e-poc` via Azure DevOps:
+
+```
+https://dev.azure.com/BAMDigitalServices/up2partsCloud/_build?definitionId=1151
+```
+
+The pipeline:
+1. Installs Node.js 22
+2. Installs dependencies
+3. Installs Playwright Chromium browser
+4. Runs all tests in headless mode
+5. Publishes test reports and screenshots as artifacts
+
+Credentials are stored as **secret pipeline variables** in Azure DevOps — never in the repository.
 
 ## Test Scenarios
 
@@ -121,7 +142,8 @@ npm run xray
 
 The 3D Part Viewer tests use pixel-by-pixel screenshot comparison:
 
-- **First run** — baseline screenshots are created automatically in `reports/screenshots/baseline/`
+- **Baselines** are committed to Git under `reports/screenshots/baseline/` and generated in CI (headless Linux) to ensure consistency across machines
+- **First run** (no baseline) — the current screenshot is saved as the baseline automatically
 - **Subsequent runs** — actual screenshots are compared against baselines; the test fails if more than 100 pixels differ
 - **Diff images** — saved to `reports/screenshots/diff/` showing changed pixels highlighted in red
 
@@ -134,7 +156,9 @@ del reports\screenshots\baseline\back-view.png
 del reports\screenshots\baseline\*.png
 ```
 
-Re-run `npm test` to recreate them.
+Re-run `npm test` to recreate them, then commit the new baselines.
+
+> **Important:** always regenerate baselines in CI (headless) not locally (headed), as WebGL rendering differs between environments. Run the pipeline once without baselines to generate them, then download and commit.
 
 ## Architecture Decisions
 
@@ -142,16 +166,19 @@ Re-run `npm test` to recreate them.
 
 **Tagged hooks** — `Before`/`After` hooks are scoped to specific scenario tags (`@login`, `@part-viewer`) so they only run for relevant tests.
 
-**Session management** — before each part-viewer test, active sessions are cleared via the backoffice to avoid hitting the session limit.
+**Session management** — before each part-viewer test, active sessions are cleared via the backoffice UI to avoid hitting the session limit.
 
 **Credentials** — stored in `.env` locally and as pipeline secret variables in Azure DevOps. Never committed to Git.
+
+**Headless mode** — tests always run headless (`headless: true`) for CI compatibility. To debug locally, temporarily change to `headless: false` in the step definition files.
 
 ## Findings & Recommendations for Full Rollout
 
 - The Playwright + Cucumber + TypeScript stack is validated and works well for this application
 - Page Object Model scales well — adding new pages follows the same pattern
-- Visual testing with pixelmatch is effective for catching 3D viewer regressions; baseline management process should be defined for the team (who approves baseline updates)
-- Session management needs a direct API solution long-term; the current backoffice UI approach adds ~10-15 seconds per test
-- Azure DevOps pipeline is the next step to enable CI execution
-- XRAY integration is ready — only API credentials needed to activate
+- Visual testing with pixelmatch is effective for catching 3D viewer regressions; a baseline management process should be defined for the team (who approves baseline updates, always regenerate in CI)
+- Session management should use the direct `POST /clearSessions` API endpoint long-term; the current backoffice UI approach adds ~10-15 seconds per test
+- XRAY integration is ready — only API credentials (`XRAY_CLIENT_ID`, `XRAY_CLIENT_SECRET`) needed to activate
 - Test data (part names, user IDs) should be moved to a shared config file as coverage expands
+- Consider adopting Sebastian's monorepo structure (`apps/` + `@e2e/core`) for full rollout to support multiple teams and surfaces
+- The XRAY pull logic from Sebastian's repo enables POs to author scenarios directly in XRAY — recommended for full rollout
