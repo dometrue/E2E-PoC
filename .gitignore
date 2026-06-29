@@ -1,3 +1,7 @@
 .env
 node_modules/
-reports/
+reports/cucumber-report.json
+reports/login-success.png
+reports/login-error.png
+reports/screenshots/actual/
+reports/screenshots/diff/
