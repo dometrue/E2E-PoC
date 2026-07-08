@@ -1,12 +1,12 @@
 Feature: Login
 
-  @login @TEST_XSP-001
+  @login @TEST_QA-140
   Scenario: Successful login with valid credentials
     Given I open the login page
     When I enter valid credentials
     Then I should be logged in successfully
 
-  @login @TEST_XSP-002
+  @login @TEST_QA-141
   Scenario: Failed login with invalid credentials
     Given I open the login page
     When I enter invalid credentials
