@@ -30,6 +30,13 @@ steps:
       BACKOFFICE_USERNAME: $(BACKOFFICE_USERNAME)
       BACKOFFICE_PASSWORD: $(BACKOFFICE_PASSWORD)
 
+  - script: npm run xray
+    displayName: 'Push results to XRAY'
+    condition: always()
+    env:
+      XRAY_CLIENT_ID: $(XRAY_CLIENT_ID)
+      XRAY_CLIENT_SECRET: $(XRAY_CLIENT_SECRET)
+
   - task: PublishPipelineArtifact@1
     inputs:
       targetPath: 'reports'
