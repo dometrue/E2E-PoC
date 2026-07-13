@@ -2,6 +2,7 @@ trigger:
   branches:
     include:
       - feature/e2e-poc
+      - master
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -15,7 +16,7 @@ steps:
   - script: npm install
     displayName: 'Install dependencies'
 
-  - script: npx playwright install chromium --with-deps
+  - script: npx playwright@1.60.0 install chromium --with-deps
     displayName: 'Install Playwright browsers'
 
   - script: npm test
