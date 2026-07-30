@@ -180,5 +180,4 @@ Re-run `npm test` to recreate them, then commit the new baselines.
 - Session management should use the direct `POST /clearSessions` API endpoint long-term; the current backoffice UI approach adds ~10-15 seconds per test
 - XRAY integration is ready — only API credentials (`XRAY_CLIENT_ID`, `XRAY_CLIENT_SECRET`) needed to activate
 - Test data (part names, user IDs) should be moved to a shared config file as coverage expands
-- Consider adopting Sebastian's monorepo structure (`apps/` + `@e2e/core`) for full rollout to support multiple teams and surfaces
-- The XRAY pull logic from Sebastian's repo enables POs to author scenarios directly in XRAY — recommended for full rollout
+- Consider adopting monorepo structure (`apps/` + `@e2e/core`) for full rollout to support multiple teams and surfaces
